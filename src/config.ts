@@ -74,8 +74,8 @@ export const defaultProps: Props = {
     resumeAt: 15,
     resumeDur: 0.7,
     pullEnd: 17.8,
-    steps: [15.3, 18.2, 21.2, 24.2, 27.2],
-    shiftStart: 27.6,
+    steps: [15.45, 18.9, 21.1, 24.1, 27.1],
+    shiftStart: 27.4,
   },
   flow: {
     speedStart: 150,
@@ -92,7 +92,7 @@ export const defaultProps: Props = {
     laterCSlow: 0.2,
   },
   camera: {zoom: 2.6, focusY: 880, drift: 0.07, wide: 1.05},
-  copy: {title: 'GOLDRATT  ·  THE BOTTLENECK NOBODY SAW', line: 'ONE CONSTRAINT.', voice: 'en'},
+  copy: {title: '', line: 'ONE CONSTRAINT.', voice: 'en'},
 };
 
 export const W = 1080;

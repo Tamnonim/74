@@ -5,15 +5,28 @@ import {Props} from '../config';
 type P = {props: Props; fps: number; doneB: number[]};
 
 /** Narration cue sheet: file, start (s). Lines are placed, never stretched. */
-export const VO: {file: string; at: number}[] = [
-  {file: 'l1.mp3', at: 0.8},
-  {file: 'l2.mp3', at: 8.6},
-  {file: 'l3.mp3', at: 15.3},
-  {file: 'l4.mp3', at: 18.2},
-  {file: 'l5.mp3', at: 21.2},
-  {file: 'l6.mp3', at: 24.2},
-  {file: 'l7.mp3', at: 27.2},
-];
+export const VO: Record<'en' | 'he', {file: string; at: number}[]> = {
+  en: [
+    {file: 'l1.mp3', at: 0.1}, // hook
+    {file: 'l2.mp3', at: 5.5},
+    {file: 'l3.mp3', at: 8.6}, // "...Which?" lands on the gold reveal
+    {file: 'l4.mp3', at: 12.2},
+    {file: 'l5.mp3', at: 15.45}, // steps follow props.timing.steps
+    {file: 'l6.mp3', at: 18.9},
+    {file: 'l7.mp3', at: 21.1},
+    {file: 'l8.mp3', at: 24.1},
+    {file: 'l9.mp3', at: 27.1},
+  ],
+  he: [
+    {file: 'l1.mp3', at: 0.8},
+    {file: 'l2.mp3', at: 8.4},
+    {file: 'l3.mp3', at: 15.45},
+    {file: 'l4.mp3', at: 18.9},
+    {file: 'l5.mp3', at: 21.1},
+    {file: 'l6.mp3', at: 24.1},
+    {file: 'l7.mp3', at: 27.1},
+  ],
+};
 
 /** Narration plus subtle placeholder sound design, driven by the same timing props. */
 export const Sfx: React.FC<P> = ({props, fps, doneB}) => {
@@ -21,7 +34,7 @@ export const Sfx: React.FC<P> = ({props, fps, doneB}) => {
   const {queueEnd, goldStart, shiftStart, steps, freezeStart, resumeAt} = props.timing;
   return (
     <>
-      {VO.map((v) => (
+      {VO[props.copy.voice].map((v) => (
         <Sequence key={v.file} from={f(v.at)}>
           <Audio src={staticFile(`vo-${props.copy.voice}/${v.file}`)} volume={1} />
         </Sequence>

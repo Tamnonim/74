@@ -72,13 +72,15 @@ export function simulate(props: Props, maxT: number, warp: Warp): Sim {
   const orders: O[] = [];
   const spawn: number[] = [];
   const doneB: number[] = [];
-  let nextSpawn = 0.25;
+  // Pre-roll: the film opens mid-motion, so the hook never starts on an empty frame.
+  const PRE = 1.6;
+  let nextSpawn = -PRE;
 
   const steps = Math.ceil(maxT / STEP);
   const snaps: Snap[] = [];
   const queueLen: number[] = [];
 
-  for (let s = 0; s <= steps; s++) {
+  for (let s = -Math.round(PRE / STEP); s <= steps; s++) {
     const t = s * STEP;
     // spawn
     while (t >= nextSpawn) {
@@ -133,6 +135,7 @@ export function simulate(props: Props, maxT: number, warp: Warp): Sim {
       o.y += o.v * STEP;
       if (o.y >= GEO.exitY) o.done = true;
     }
+    if (s < 0) continue;
     queueLen.push(q);
 
     const n = orders.length;
