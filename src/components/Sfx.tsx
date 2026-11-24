@@ -36,11 +36,12 @@ export const Sfx: React.FC<P> = ({props, fps, doneB}) => {
   const {queueEnd, goldStart, shiftStart, steps, freezeStart, resumeAt} = props.timing;
   return (
     <>
-      {VO[props.copy.voice].map((v) => (
+      {props.layers.vo && VO[props.copy.voice].map((v) => (
         <Sequence key={v.file} from={f(v.at)}>
           <Audio src={staticFile(`vo-${props.copy.voice}/${v.file}`)} volume={1} />
         </Sequence>
       ))}
+      {props.layers.sfx && (<>
       <Sequence from={0} durationInFrames={f(4.2)}><Audio src={staticFile('sfx/momentum.wav')} volume={0.2} /></Sequence>
       {doneB
         .filter((t) => t < freezeStart || t > resumeAt)
@@ -55,6 +56,7 @@ export const Sfx: React.FC<P> = ({props, fps, doneB}) => {
         <Sequence key={i} from={f(s - 0.1)}><Audio src={staticFile('sfx/step.wav')} volume={0.22} /></Sequence>
       ))}
       <Sequence from={f(shiftStart + 0.9)}><Audio src={staticFile('sfx/reveal.wav')} volume={0.3} /></Sequence>
+      </>)}
     </>
   );
 };

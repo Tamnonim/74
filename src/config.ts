@@ -5,6 +5,16 @@ import {z} from 'zod';
  * (via the zod schema), and all scenes read from the same object.
  */
 export const schema = z.object({
+  /** Layer switches, for editor deliverables (clean plate, stems). */
+  layers: z.object({
+    subtitles: z.boolean(),
+    headline: z.boolean(), // ONE CONSTRAINT. + step dots
+    logo: z.boolean(),
+    endCard: z.boolean(),
+    vo: z.boolean(),
+    sfx: z.boolean(),
+    picture: z.boolean(),
+  }),
   palette: z.object({
     bg: z.string(),
     ivory: z.string(),
@@ -69,6 +79,7 @@ export const schema = z.object({
 export type Props = z.infer<typeof schema>;
 
 export const defaultProps: Props = {
+  layers: {subtitles: true, headline: true, logo: true, endCard: true, vo: true, sfx: true, picture: true},
   palette: {bg: '#101010', ivory: '#F1EEE5', gold: '#C5A269'},
   timing: {
     accelEnd: 4,

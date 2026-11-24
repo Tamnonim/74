@@ -103,7 +103,7 @@ export const Bottleneck: React.FC<Props> = (props) => {
 
   return (
     <AbsoluteFill style={{background: pal.bg}}>
-      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}
+      {props.layers.picture && <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}
         style={{position: 'absolute', opacity: 1 - 0.94 * smooth(seg(t, props.brand.endStart - 0.2, props.brand.endStart + 0.7))}}>
         <g transform={`translate(${W / 2} ${H / 2}) scale(${z}) translate(${-GEO.cx} ${-cy})`}>
           {/* axis + station levels: the mathematical scaffolding */}
@@ -171,7 +171,7 @@ export const Bottleneck: React.FC<Props> = (props) => {
             );
           })}
         </g>
-      </svg>
+      </svg>}
 
       <div style={{
         position: 'absolute', top: 205, left: 0, right: 0, textAlign: 'center',
@@ -188,12 +188,12 @@ export const Bottleneck: React.FC<Props> = (props) => {
       }} />
 
       {/* logo bug */}
-      <div style={{position: 'absolute', left: 64, top: 88, opacity: 0.9 * smooth(seg(t, 0.2, 1)) * (1 - smooth(seg(t, props.brand.endStart, props.brand.endStart + 0.5)))}}>
+      {props.layers.logo && <div style={{position: 'absolute', left: 64, top: 88, opacity: 0.9 * smooth(seg(t, 0.2, 1)) * (1 - smooth(seg(t, props.brand.endStart, props.brand.endStart + 0.5)))}}>
         <Logo name={props.brand.name} descriptor={props.brand.descriptor} ivory={pal.ivory} gold={pal.gold} scale={0.85} />
-      </div>
+      </div>}
 
       {/* end card: logo + call to action */}
-      {t >= props.brand.endStart && (
+      {props.layers.endCard && t >= props.brand.endStart && (
         <div style={{
           position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', gap: 70, fontFamily: FONT,
@@ -218,23 +218,23 @@ export const Bottleneck: React.FC<Props> = (props) => {
         </div>
       )}
 
-      <div style={{opacity: 1 - smooth(seg(t, tm.resumeAt, tm.resumeAt + 0.5))}}>
+      {props.layers.headline && <div style={{opacity: 1 - smooth(seg(t, tm.resumeAt, tm.resumeAt + 0.5))}}>
         <div style={{
           position: 'absolute', left: 0, right: 0, bottom: 0, height: 620,
           background: `linear-gradient(to bottom, transparent, ${pal.bg} 55%)`,
           opacity: smooth(seg(t, tm.textStart - 0.8, tm.textStart + 0.4)),
         }} />
         <ConstraintText text={props.copy.line} start={tm.textStart} ivory={pal.ivory} gold={pal.gold} top={1480} />
-      </div>
+      </div>}
 
-      {props.copy.captions.map((c, i, all) => (
+      {props.layers.subtitles && props.copy.captions.map((c, i, all) => (
         // never overlap the next line, even if the timings in props do
         <Subtitle key={i} text={c.text} at={c.at} end={Math.min(c.end, all[i + 1] ? all[i + 1].at : c.end)} color={pal.ivory} top={1690} />
       ))}
 
 
       {/* five focusing steps: a quiet progress row, no words */}
-      <svg width={W} height={H} style={{position: 'absolute', opacity: smooth(seg(t, tm.steps[0] - 0.4, tm.steps[0] + 0.4)) * (1 - smooth(seg(t, props.brand.endStart - 0.2, props.brand.endStart + 0.4)))}}>
+      {props.layers.headline && <svg width={W} height={H} style={{position: 'absolute', opacity: smooth(seg(t, tm.steps[0] - 0.4, tm.steps[0] + 0.4)) * (1 - smooth(seg(t, props.brand.endStart - 0.2, props.brand.endStart + 0.4)))}}>
         {[0, 1, 2, 3, 4].map((i) => {
           const x = W / 2 + (i - 2) * 54;
           const done = stepNow > i + 1 || (stepNow === i + 1 && false);
@@ -248,7 +248,7 @@ export const Bottleneck: React.FC<Props> = (props) => {
             </g>
           );
         })}
-      </svg>
+      </svg>}
 
       <Sfx props={props} fps={fps} doneB={sim.doneB.map((d) => warp.inv(d))} />
     </AbsoluteFill>
