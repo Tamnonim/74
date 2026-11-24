@@ -2,12 +2,14 @@ import React, {useMemo} from 'react';
 import {AbsoluteFill, interpolateColors, useCurrentFrame, useVideoConfig} from 'remotion';
 import {B, GEO, H, Props, W} from './config';
 import {simulate, Sim} from './sim';
-import {cameraAt, clamp, halfWidth, laneScale, lerp, makeWarp, seg, smooth, throatsAt} from './util';
+import {cameraAt, clamp, halfWidth, laneScale, lerp, makeWarp, outCubic, seg, smooth, throatsAt} from './util';
 import {Channel} from './components/Channel';
 import {Station, Arc} from './components/Station';
 import {Order} from './components/Order';
 import {ConstraintText} from './components/ConstraintText';
 import {Sfx} from './components/Sfx';
+import {Caption} from './components/Caption';
+import {Logo} from './components/Logo';
 
 const FONT = "'Inter Display','Inter',Helvetica,Arial,sans-serif";
 
@@ -101,7 +103,8 @@ export const Bottleneck: React.FC<Props> = (props) => {
 
   return (
     <AbsoluteFill style={{background: pal.bg}}>
-      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} style={{position: 'absolute'}}>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`}
+        style={{position: 'absolute', opacity: 1 - 0.94 * smooth(seg(t, props.brand.endStart - 0.2, props.brand.endStart + 0.7))}}>
         <g transform={`translate(${W / 2} ${H / 2}) scale(${z}) translate(${-GEO.cx} ${-cy})`}>
           {/* axis + station levels: the mathematical scaffolding */}
           <line x1={GEO.cx} x2={GEO.cx} y1={GEO.entryY - 60} y2={GEO.exitY + 40}
@@ -176,7 +179,49 @@ export const Bottleneck: React.FC<Props> = (props) => {
         color: pal.ivory, opacity: titleOp * 0.6, whiteSpace: 'pre',
       }}>{props.copy.title}</div>
 
-      <div style={{opacity: 1 - smooth(seg(t, tm.resumeAt + 0.1, tm.resumeAt + 0.9))}}>
+      {/* caption veil keeps text legible over the channel */}
+      <div style={{
+        position: 'absolute', left: 0, right: 0, bottom: 0, height: 520,
+        background: `linear-gradient(to bottom, transparent, ${pal.bg} 70%)`,
+        opacity: 0.9 * smooth(seg(t, 0.1, 0.8)) * (1 - smooth(seg(t, tm.resumeAt - 0.4, tm.resumeAt))) +
+          0.9 * smooth(seg(t, tm.resumeAt + 0.2, tm.resumeAt + 0.9)),
+      }} />
+      {props.copy.captions.map((c, i) => (
+        <Caption key={i} {...c} ivory={pal.ivory} goldColor={pal.gold} top={1600} />
+      ))}
+
+      {/* logo bug */}
+      <div style={{position: 'absolute', left: 64, top: 88, opacity: 0.9 * smooth(seg(t, 0.2, 1)) * (1 - smooth(seg(t, props.brand.endStart, props.brand.endStart + 0.5)))}}>
+        <Logo name={props.brand.name} descriptor={props.brand.descriptor} ivory={pal.ivory} gold={pal.gold} scale={0.85} />
+      </div>
+
+      {/* end card: logo + call to action */}
+      {t >= props.brand.endStart && (
+        <div style={{
+          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 70, fontFamily: FONT,
+        }}>
+          <div style={{opacity: smooth(seg(t, props.brand.endStart + 0.3, props.brand.endStart + 1))}}>
+            <Logo name={props.brand.name} descriptor={props.brand.descriptor} ivory={pal.ivory} gold={pal.gold} scale={2} align="center" />
+          </div>
+          <div style={{
+            opacity: smooth(seg(t, props.brand.endStart + 0.7, props.brand.endStart + 1.4)),
+            transform: `translateY(${(1 - outCubic(seg(t, props.brand.endStart + 0.7, props.brand.endStart + 1.4))) * 24}px)`,
+            textAlign: 'center',
+          }}>
+            <div style={{
+              display: 'inline-block', border: `1.5px solid ${pal.gold}`, borderRadius: 100, padding: '30px 64px',
+              fontSize: 36, fontWeight: 400, letterSpacing: '0.24em', marginRight: '-0.24em', color: pal.ivory,
+            }}>{props.brand.ctaHeadline}  <span style={{color: pal.gold}}>→</span></div>
+            <div style={{marginTop: 34, fontSize: 24, letterSpacing: '0.14em', color: pal.ivory, opacity: 0.6}}>{props.brand.ctaSub}</div>
+            {props.brand.ctaUrl && (
+              <div style={{marginTop: 14, fontSize: 28, letterSpacing: '0.12em', color: pal.gold}}>{props.brand.ctaUrl}</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div style={{opacity: 1 - smooth(seg(t, tm.resumeAt, tm.resumeAt + 0.5))}}>
         <div style={{
           position: 'absolute', left: 0, right: 0, bottom: 0, height: 620,
           background: `linear-gradient(to bottom, transparent, ${pal.bg} 55%)`,
@@ -186,7 +231,7 @@ export const Bottleneck: React.FC<Props> = (props) => {
       </div>
 
       {/* five focusing steps: a quiet progress row, no words */}
-      <svg width={W} height={H} style={{position: 'absolute', opacity: smooth(seg(t, tm.steps[0] - 0.4, tm.steps[0] + 0.4))}}>
+      <svg width={W} height={H} style={{position: 'absolute', opacity: smooth(seg(t, tm.steps[0] - 0.4, tm.steps[0] + 0.4)) * (1 - smooth(seg(t, props.brand.endStart - 0.2, props.brand.endStart + 0.4)))}}>
         {[0, 1, 2, 3, 4].map((i) => {
           const x = W / 2 + (i - 2) * 54;
           const done = stepNow > i + 1 || (stepNow === i + 1 && false);

@@ -7,24 +7,26 @@ type P = {props: Props; fps: number; doneB: number[]};
 /** Narration cue sheet: file, start (s). Lines are placed, never stretched. */
 export const VO: Record<'en' | 'he', {file: string; at: number}[]> = {
   en: [
-    {file: 'l1.mp3', at: 0.1}, // hook
-    {file: 'l2.mp3', at: 5.5},
-    {file: 'l3.mp3', at: 8.6}, // "...Which?" lands on the gold reveal
-    {file: 'l4.mp3', at: 12.2},
-    {file: 'l5.mp3', at: 15.45}, // steps follow props.timing.steps
-    {file: 'l6.mp3', at: 18.9},
-    {file: 'l7.mp3', at: 21.1},
-    {file: 'l8.mp3', at: 24.1},
-    {file: 'l9.mp3', at: 27.1},
+    {file: 'l1.mp3', at: 0.0}, // hook
+    {file: 'l2.mp3', at: 5.65},
+    {file: 'l3.mp3', at: 8.7}, // "...Which?" lands on the gold reveal
+    {file: 'l4.mp3', at: 12.45},
+    {file: 'l5.mp3', at: 15.6}, // steps follow props.timing.steps
+    {file: 'l6.mp3', at: 19.0},
+    {file: 'l7.mp3', at: 21.4},
+    {file: 'l8.mp3', at: 24.5},
+    {file: 'l9.mp3', at: 27.55},
+    {file: 'l10.mp3', at: 30.5}, // call to action
   ],
+
   he: [
     {file: 'l1.mp3', at: 0.8},
     {file: 'l2.mp3', at: 8.4},
-    {file: 'l3.mp3', at: 15.45},
-    {file: 'l4.mp3', at: 18.9},
-    {file: 'l5.mp3', at: 21.1},
-    {file: 'l6.mp3', at: 24.1},
-    {file: 'l7.mp3', at: 27.1},
+    {file: 'l3.mp3', at: 15.6},
+    {file: 'l4.mp3', at: 19.0},
+    {file: 'l5.mp3', at: 21.4},
+    {file: 'l6.mp3', at: 24.5},
+    {file: 'l7.mp3', at: 27.55},
   ],
 };
 

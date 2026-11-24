@@ -53,6 +53,16 @@ export const schema = z.object({
     title: z.string(),
     line: z.string(),
     voice: z.enum(['en', 'he']), // narration language (files in public/vo-en, public/vo-he)
+    /** On-screen captions, synced to narration. `gold` is the word picked out in gold. */
+    captions: z.array(z.object({at: z.number(), end: z.number(), text: z.string(), gold: z.string()})),
+  }),
+  brand: z.object({
+    name: z.string(), // placeholder wordmark until the real logo SVG is supplied
+    descriptor: z.string(),
+    ctaHeadline: z.string(),
+    ctaSub: z.string(),
+    ctaUrl: z.string(), // empty hides the line
+    endStart: z.number(), // end card begins
   }),
 });
 
@@ -74,8 +84,8 @@ export const defaultProps: Props = {
     resumeAt: 15,
     resumeDur: 0.7,
     pullEnd: 17.8,
-    steps: [15.45, 18.9, 21.1, 24.1, 27.1],
-    shiftStart: 27.4,
+    steps: [15.6, 19.0, 21.4, 24.5, 27.55],
+    shiftStart: 27.8,
   },
   flow: {
     speedStart: 150,
@@ -92,13 +102,33 @@ export const defaultProps: Props = {
     laterCSlow: 0.2,
   },
   camera: {zoom: 2.6, focusY: 880, drift: 0.07, wide: 1.05},
-  copy: {title: '', line: 'ONE CONSTRAINT.', voice: 'en'},
+  copy: {title: '', line: 'ONE CONSTRAINT.',
+    voice: 'en',
+    captions: [
+      {at: 0.2, end: 5.5, text: 'ONE HIDDEN THROTTLE', gold: 'THROTTLE'},
+      {at: 5.6, end: 8.6, text: 'EVERYTHING ELSE: ZERO GAIN', gold: 'ZERO'},
+      {at: 8.7, end: 12.0, text: 'WHICH ONE?', gold: 'ONE'},
+      {at: 15.6, end: 18.9, text: '01  FIND IT', gold: 'FIND'},
+      {at: 19.0, end: 21.3, text: '02  NEVER LET IT IDLE', gold: 'IDLE'},
+      {at: 21.4, end: 24.4, text: '03  SLOW THE REST', gold: 'SLOW'},
+      {at: 24.5, end: 27.5, text: '04  THEN ELEVATE', gold: 'ELEVATE'},
+      {at: 27.55, end: 28.9, text: '05  REPEAT', gold: 'REPEAT'},
+      {at: 29.0, end: 30.2, text: 'IT JUST MOVED', gold: 'MOVED'},
+    ],  },
+  brand: {
+    name: 'GOLDRATT',
+    descriptor: 'CONSULTING',
+    ctaHeadline: 'FIND YOUR CONSTRAINT',
+    ctaSub: 'Talk to Goldratt Consulting',
+    ctaUrl: '',
+    endStart: 30.2,
+  },
 };
 
 export const W = 1080;
 export const H = 1920;
 export const FPS = 30;
-export const DURATION = 30 * FPS;
+export const DURATION = 34 * FPS;
 
 /** Fixed geometry: one vertical channel, three stations. */
 export const GEO = {

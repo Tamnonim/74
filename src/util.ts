@@ -51,7 +51,7 @@ export const laneScale = (y: number) => {
  * 1x, eases to a full stop (the freeze), holds, then eases back to 1x.
  */
 export type Warp = {fwd: (t: number) => number; inv: (T: number) => number; end: number};
-export const makeWarp = (props: Props, total = 30): Warp => {
+export const makeWarp = (props: Props, total = 34): Warp => {
   const {freezeStart: fs, freezeDur: fd, resumeAt: ra, resumeDur: rd} = props.timing;
   const m = (t: number) => {
     if (t < fs) return 1;
