@@ -1,4 +1,5 @@
 import {GEO, B, Props} from './config';
+import {Warp} from './util';
 
 /**
  * Deterministic order-flow simulation. Pure function of props, so every
@@ -25,12 +26,13 @@ export type Sim = {
   queueAt: (t: number) => number;
 };
 
+const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const smooth = (x: number) => {
   const c = Math.min(1, Math.max(0, x));
   return c * c * (3 - 2 * c);
 };
 
-export function simulate(props: Props, maxT: number): Sim {
+export function simulate(props: Props, maxT: number, warp: Warp): Sim {
   const {flow, timing} = props;
   const [yA, yB, yC] = GEO.stations;
   void yA;
@@ -38,9 +40,20 @@ export function simulate(props: Props, maxT: number): Sim {
   const R = GEO.R;
   const yE = yB - R - 14; // waiting point outside the ring
 
+  // Focusing-step events, converted from film time to simulation time.
+  const subT = warp.fwd(timing.steps[2]);
+  const elevT = warp.fwd(timing.steps[3]);
+  const shiftT = warp.fwd(timing.shiftStart);
   const vUp = (t: number) =>
-    flow.speedStart +
-    (flow.speedEnd - flow.speedStart) * smooth(t / timing.accelEnd);
+    lerp(
+      flow.speedStart + (flow.speedEnd - flow.speedStart) * smooth(t / timing.accelEnd),
+      flow.subSpeed,
+      smooth((t - subT) / 1.2),
+    );
+  const serviceB = (t: number) => lerp(flow.serviceB, flow.elevService, smooth((t - elevT) / 1.0));
+  const exitV = (t: number) => lerp(flow.exitSpeed, flow.elevExit, smooth((t - elevT) / 1.5));
+  const tauS = (t: number) => lerp(TAU_S, 0.07, smooth((t - elevT) / 1.0));
+  const cFactor = (t: number) => lerp(0.62, flow.laterCSlow, smooth((t - shiftT) / 1.5));
   const interval = (t: number) => {
     if (t < timing.accelEnd) {
       return (
@@ -55,7 +68,7 @@ export function simulate(props: Props, maxT: number): Sim {
     );
   };
 
-  type O = {y: number; v: number; phase: 0 | 1 | 2; rem: number; done: boolean; passedB: boolean};
+  type O = {y: number; v: number; phase: 0 | 1 | 2; rem: number; svc: number; done: boolean; passedB: boolean};
   const orders: O[] = [];
   const spawn: number[] = [];
   const doneB: number[] = [];
@@ -69,7 +82,7 @@ export function simulate(props: Props, maxT: number): Sim {
     const t = s * STEP;
     // spawn
     while (t >= nextSpawn) {
-      orders.push({y: GEO.entryY, v: vUp(t), phase: 0, rem: 0, done: false, passedB: false});
+      orders.push({y: GEO.entryY, v: vUp(t), phase: 0, rem: 0, svc: 1, done: false, passedB: false});
       spawn.push(nextSpawn);
       nextSpawn += interval(nextSpawn);
     }
@@ -93,11 +106,10 @@ export function simulate(props: Props, maxT: number): Sim {
         continue;
       }
       // desired speed
-      let vTarget = o.passedB ? flow.exitSpeed : vUp(t);
+      let vTarget = o.passedB ? exitV(t) : vUp(t);
       // ring slows the flow slightly for stations 01 and 03
-      for (const k of [0, 2]) {
-        if (Math.abs(o.y - GEO.stations[k]) < R) vTarget *= 0.62;
-      }
+      if (Math.abs(o.y - GEO.stations[0]) < R) vTarget *= 0.62;
+      if (Math.abs(o.y - GEO.stations[2]) < R) vTarget *= cFactor(t);
       // follow the leader
       const room = Math.max(0, leaderY - flow.gap - o.y);
       vTarget = Math.min(vTarget, room / TAU);
@@ -105,12 +117,13 @@ export function simulate(props: Props, maxT: number): Sim {
       if (!o.passedB) {
         const stop = bBusy ? yE : yB;
         const toStop = Math.max(0, stop - o.y);
-        vTarget = Math.min(vTarget, toStop / TAU_S);
+        vTarget = Math.min(vTarget, toStop / tauS(t));
         if (!bBusy && stop - o.y < 2.5 && room > 0) {
           // admit into the station (only the head of the queue gets here)
           o.y = yB;
           o.phase = 1;
-          o.rem = flow.serviceB;
+          o.svc = serviceB(t);
+          o.rem = o.svc;
           o.v = 0;
           continue;
         }
@@ -129,7 +142,7 @@ export function simulate(props: Props, maxT: number): Sim {
     for (let i = 0; i < n; i++) {
       y[i] = orders[i].y;
       v[i] = orders[i].v;
-      p[i] = orders[i].phase === 1 ? 1 - orders[i].rem / flow.serviceB : -1;
+      p[i] = orders[i].phase === 1 ? 1 - orders[i].rem / orders[i].svc : -1;
       if (orders[i].done) y[i] = 99999;
     }
     snaps.push({y, v, p});

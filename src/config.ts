@@ -22,6 +22,11 @@ export const schema = z.object({
     goldStart: z.number(), // station 02 turns gold
     goldDur: z.number(),
     textStart: z.number(), // "ONE CONSTRAINT."
+    resumeAt: z.number(), // time starts again after the freeze
+    resumeDur: z.number(),
+    pullEnd: z.number(), // camera back to the full system
+    steps: z.array(z.number()).length(5), // start of each focusing step
+    shiftStart: z.number(), // step 5: the constraint moves to station 03
   }),
   /** Flow model. Speeds in px/s, durations in s. */
   flow: z.object({
@@ -33,11 +38,16 @@ export const schema = z.object({
     exitSpeed: z.number(),
     serviceB: z.number(), // time station 02 needs per order
     gap: z.number(), // min spacing between orders along the channel
+    subSpeed: z.number(), // step 3: upstream calms to the constraint's pace
+    elevService: z.number(), // step 4: station 02 service time after elevation
+    elevExit: z.number(), // step 4: exit speed after elevation
+    laterCSlow: z.number(), // step 5: pass-through factor at station 03
   }),
   camera: z.object({
     zoom: z.number().min(1).max(5),
     focusY: z.number(),
     drift: z.number(), // extra zoom over the final hold
+    wide: z.number(), // zoom of the full-system view after the pull back
   }),
   copy: z.object({
     title: z.string(),
@@ -60,6 +70,11 @@ export const defaultProps: Props = {
     goldStart: 12,
     goldDur: 1.1,
     textStart: 13,
+    resumeAt: 15,
+    resumeDur: 0.7,
+    pullEnd: 17.8,
+    steps: [15.3, 18.2, 21.2, 24.2, 27.2],
+    shiftStart: 27.6,
   },
   flow: {
     speedStart: 150,
@@ -70,15 +85,19 @@ export const defaultProps: Props = {
     exitSpeed: 105,
     serviceB: 1.05,
     gap: 24,
+    subSpeed: 130,
+    elevService: 0.25,
+    elevExit: 240,
+    laterCSlow: 0.2,
   },
-  camera: {zoom: 2.6, focusY: 880, drift: 0.07},
+  camera: {zoom: 2.6, focusY: 880, drift: 0.07, wide: 1.05},
   copy: {title: 'GOLDRATT  ·  THE BOTTLENECK NOBODY SAW', line: 'ONE CONSTRAINT.'},
 };
 
 export const W = 1080;
 export const H = 1920;
 export const FPS = 30;
-export const DURATION = 15 * FPS;
+export const DURATION = 30 * FPS;
 
 /** Fixed geometry: one vertical channel, three stations. */
 export const GEO = {

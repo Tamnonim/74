@@ -2,7 +2,7 @@ import React, {useMemo} from 'react';
 import {AbsoluteFill, interpolateColors, useCurrentFrame, useVideoConfig} from 'remotion';
 import {B, GEO, H, Props, W} from './config';
 import {simulate, Sim} from './sim';
-import {maxSimTime, cameraAt, clamp, halfWidth, laneScale, lerp, outCubic, seg, smooth, warp} from './util';
+import {cameraAt, clamp, halfWidth, laneScale, lerp, makeWarp, seg, smooth, throatsAt} from './util';
 import {Channel} from './components/Channel';
 import {Station, Arc} from './components/Station';
 import {Order} from './components/Order';
@@ -39,16 +39,29 @@ export const Bottleneck: React.FC<Props> = (props) => {
   const {palette: pal, timing: tm} = props;
 
   const simKey = JSON.stringify([props.flow, props.timing]);
-  const sim = useMemo(() => simulate(props, maxSimTime(props)), [simKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  const {sim, warp} = useMemo(() => {
+    const w = makeWarp(props);
+    return {sim: simulate(props, w.end, w), warp: w};
+  }, [simKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const T = warp(t, props);
+  const T = warp.fwd(t);
   const orders = sample(sim, T);
   const {z, cy} = cameraAt(t, props);
   const k = 1 / z;
 
-  const recede = smooth(seg(t, tm.fadeStart, tm.fadeEnd));
-  const g = smooth(seg(t, tm.goldStart, tm.goldStart + tm.goldDur));
-  const ripple = seg(t, tm.goldStart + 0.1, tm.goldStart + 1.7);
+  const th = throatsAt(t, props);
+  const recede = smooth(seg(t, tm.fadeStart, tm.fadeEnd)) * (1 - smooth(seg(t, tm.resumeAt + 0.2, tm.pullEnd - 0.3)));
+  // gold: constraint is station 02 from goldStart, hands over to station 03 at shiftStart
+  const gB = smooth(seg(t, tm.goldStart, tm.goldStart + tm.goldDur)) * (1 - smooth(seg(t, tm.shiftStart, tm.shiftStart + 1)));
+  const gC = smooth(seg(t, tm.shiftStart + 0.9, tm.shiftStart + 0.9 + tm.goldDur));
+  const goldAmt = [0, gB, gC];
+  const rippleB = (() => {
+    const a = seg(t, tm.goldStart + 0.1, tm.goldStart + 1.7);
+    const b = seg(t, tm.steps[0] + 0.1, tm.steps[0] + 1.7);
+    return t < tm.resumeAt ? a : b > 0 && b < 1 ? b : undefined;
+  })();
+  const rippleC = seg(t, tm.shiftStart + 1.0, tm.shiftStart + 2.6);
+  const stepNow = tm.steps.filter((s) => t >= s - 0.05).length; // 0..5
   const yB = GEO.stations[B];
 
   // Station activity, derived from the same snapshot that places the orders.
@@ -66,8 +79,11 @@ export const Bottleneck: React.FC<Props> = (props) => {
     });
     return arcs;
   };
-  const rotRate = [9, 4.5, 13];
+  const calm = 1 - 0.7 * smooth(seg(t, tm.steps[2], tm.steps[2] + 1.5));
+  const rotRate = [9 * calm, 4.5, 13];
   const stOpacity = (i: number) => (i === B ? 1 : 1 - 0.88 * recede);
+  const ropeAmt = smooth(seg(t, tm.steps[2], tm.steps[2] + 1)) * (1 - smooth(seg(t, tm.steps[3] + 1.5, tm.steps[3] + 2.5)));
+  const exploitAmt = smooth(seg(t, tm.steps[1], tm.steps[1] + 1.3)) * (1 - smooth(seg(t, tm.steps[3], tm.steps[3] + 1)));
 
   const dotOpacity = (y: number) => {
     const spawn = smooth((y - GEO.entryY) / 36);
@@ -95,7 +111,19 @@ export const Bottleneck: React.FC<Props> = (props) => {
             <g key={i} opacity={i === B ? 1 : 1 - recede}>{hair(y, 0.09)}</g>
           ))}
 
-          <Channel ivory={pal.ivory} gold={pal.gold} recede={recede} goldAmt={g} k={k} />
+          {/* step 3: the rope, a gold tether from station 01 to the constraint */}
+          {ropeAmt > 0 && (
+            <line x1={GEO.cx} x2={GEO.cx} y1={GEO.stations[0] + GEO.R} y2={yB - GEO.R} stroke={pal.gold}
+              strokeOpacity={0.8 * ropeAmt} strokeWidth={1.6 * k} strokeDasharray={`${3 * k} ${9 * k}`} />
+          )}
+          {/* step 2: the constraint is never allowed to idle, one unbroken outer ring */}
+          {exploitAmt > 0 && (
+            <circle cx={GEO.cx} cy={yB} r={GEO.R + 36} fill="none" stroke={pal.gold}
+              strokeOpacity={0.55 * exploitAmt} strokeWidth={1.4 * k}
+              strokeDasharray={`${2 * Math.PI * (GEO.R + 36) * smooth(seg(t, tm.steps[1], tm.steps[1] + 1.3))} 9999`}
+              transform={`rotate(-90 ${GEO.cx} ${yB})`} />
+          )}
+          <Channel ivory={pal.ivory} gold={pal.gold} recede={recede} goldAmt={goldAmt} throats={th} k={k} />
 
           {GEO.stations.map((y, i) => (
             <Station
@@ -106,11 +134,11 @@ export const Bottleneck: React.FC<Props> = (props) => {
               ivory={pal.ivory}
               gold={pal.gold}
               opacity={stOpacity(i)}
-              goldAmt={i === B ? g : 0}
+              goldAmt={goldAmt[i]}
               rotation={T * rotRate[i]}
               arcs={stationArcs(i)}
               k={k}
-              ripple={i === B ? ripple : undefined}
+              ripple={i === B ? rippleB : i === 2 ? rippleC : undefined}
             />
           ))}
 
@@ -124,7 +152,7 @@ export const Bottleneck: React.FC<Props> = (props) => {
           {orders.map((o, i) => {
             if (o.y > 9000) return null;
             const lane = ((i * 5) % 3) - 1;
-            const x = GEO.cx + lane * 0.62 * halfWidth(o.y) * laneScale(o.y);
+            const x = GEO.cx + lane * 0.62 * halfWidth(o.y, th) * laneScale(o.y);
             const inB = o.p >= 0;
             return (
               <Order
@@ -133,7 +161,7 @@ export const Bottleneck: React.FC<Props> = (props) => {
                 y={o.y}
                 speed={o.v}
                 opacity={dotOpacity(o.y)}
-                color={inB ? interpolateColors(g, [0, 1], [pal.ivory, pal.gold]) : pal.ivory}
+                color={inB ? interpolateColors(gB, [0, 1], [pal.ivory, pal.gold]) : pal.ivory}
                 streakColor={pal.ivory}
                 k={k}
               />
@@ -148,14 +176,33 @@ export const Bottleneck: React.FC<Props> = (props) => {
         color: pal.ivory, opacity: titleOp * 0.6, whiteSpace: 'pre',
       }}>{props.copy.title}</div>
 
-      <div style={{
-        position: 'absolute', left: 0, right: 0, bottom: 0, height: 620,
-        background: `linear-gradient(to bottom, transparent, ${pal.bg} 55%)`,
-        opacity: smooth(seg(t, tm.textStart - 0.8, tm.textStart + 0.4)),
-      }} />
-      <ConstraintText text={props.copy.line} start={tm.textStart} ivory={pal.ivory} gold={pal.gold} top={1610} />
+      <div style={{opacity: 1 - smooth(seg(t, tm.resumeAt + 0.1, tm.resumeAt + 0.9))}}>
+        <div style={{
+          position: 'absolute', left: 0, right: 0, bottom: 0, height: 620,
+          background: `linear-gradient(to bottom, transparent, ${pal.bg} 55%)`,
+          opacity: smooth(seg(t, tm.textStart - 0.8, tm.textStart + 0.4)),
+        }} />
+        <ConstraintText text={props.copy.line} start={tm.textStart} ivory={pal.ivory} gold={pal.gold} top={1610} />
+      </div>
 
-      <Sfx props={props} fps={fps} doneB={sim.doneB} />
+      {/* five focusing steps: a quiet progress row, no words */}
+      <svg width={W} height={H} style={{position: 'absolute', opacity: smooth(seg(t, tm.steps[0] - 0.4, tm.steps[0] + 0.4))}}>
+        {[0, 1, 2, 3, 4].map((i) => {
+          const x = W / 2 + (i - 2) * 54;
+          const done = stepNow > i + 1 || (stepNow === i + 1 && false);
+          const cur = stepNow === i + 1;
+          const pop = cur ? smooth(seg(t, tm.steps[i], tm.steps[i] + 0.5)) : 0;
+          return (
+            <g key={i}>
+              <circle cx={x} cy={1790} r={6} fill={cur || done ? pal.gold : 'none'}
+                fillOpacity={cur ? 1 : 0.55} stroke={pal.ivory} strokeOpacity={cur || done ? 0 : 0.3} strokeWidth={1.4} />
+              {cur && <circle cx={x} cy={1790} r={6 + 8 * pop} fill="none" stroke={pal.gold} strokeOpacity={0.7 * (1 - pop)} strokeWidth={1.2} />}
+            </g>
+          );
+        })}
+      </svg>
+
+      <Sfx props={props} fps={fps} doneB={sim.doneB.map((d) => warp.inv(d))} />
     </AbsoluteFill>
   );
 };

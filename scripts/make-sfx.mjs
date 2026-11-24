@@ -75,3 +75,13 @@ function write(name, data, peak = 0.9) {
   }
   write('reveal', d, 0.7);
 }
+// 5. step: soft two-note marker for each focusing step
+{
+  const d = buf(1.2);
+  for (let i = 0; i < d.length; i++) {
+    const t = i / SR;
+    const e = smooth(t / 0.02) * Math.exp(-t * 4.5);
+    d[i] = (Math.sin(2 * Math.PI * 392 * t) * 0.6 + Math.sin(2 * Math.PI * 587.33 * t) * 0.35 + Math.sin(2 * Math.PI * 784 * t) * 0.12) * e;
+  }
+  write('step', d, 0.5);
+}
