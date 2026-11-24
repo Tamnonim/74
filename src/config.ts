@@ -52,6 +52,7 @@ export const schema = z.object({
   copy: z.object({
     title: z.string(),
     line: z.string(),
+    voice: z.enum(['en', 'he']), // narration language (files in public/vo-en, public/vo-he)
   }),
 });
 
@@ -91,7 +92,7 @@ export const defaultProps: Props = {
     laterCSlow: 0.2,
   },
   camera: {zoom: 2.6, focusY: 880, drift: 0.07, wide: 1.05},
-  copy: {title: 'GOLDRATT  ·  THE BOTTLENECK NOBODY SAW', line: 'ONE CONSTRAINT.'},
+  copy: {title: 'GOLDRATT  ·  THE BOTTLENECK NOBODY SAW', line: 'ONE CONSTRAINT.', voice: 'en'},
 };
 
 export const W = 1080;
