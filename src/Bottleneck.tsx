@@ -8,7 +8,7 @@ import {Station, Arc} from './components/Station';
 import {Order} from './components/Order';
 import {ConstraintText} from './components/ConstraintText';
 import {Sfx} from './components/Sfx';
-import {Caption} from './components/Caption';
+import {Subtitle} from './components/Subtitle';
 import {Logo} from './components/Logo';
 
 const FONT = "'Inter Display','Inter',Helvetica,Arial,sans-serif";
@@ -186,9 +186,6 @@ export const Bottleneck: React.FC<Props> = (props) => {
         opacity: 0.9 * smooth(seg(t, 0.1, 0.8)) * (1 - smooth(seg(t, tm.resumeAt - 0.4, tm.resumeAt))) +
           0.9 * smooth(seg(t, tm.resumeAt + 0.2, tm.resumeAt + 0.9)),
       }} />
-      {props.copy.captions.map((c, i) => (
-        <Caption key={i} {...c} ivory={pal.ivory} goldColor={pal.gold} top={1600} />
-      ))}
 
       {/* logo bug */}
       <div style={{position: 'absolute', left: 64, top: 88, opacity: 0.9 * smooth(seg(t, 0.2, 1)) * (1 - smooth(seg(t, props.brand.endStart, props.brand.endStart + 0.5)))}}>
@@ -227,8 +224,14 @@ export const Bottleneck: React.FC<Props> = (props) => {
           background: `linear-gradient(to bottom, transparent, ${pal.bg} 55%)`,
           opacity: smooth(seg(t, tm.textStart - 0.8, tm.textStart + 0.4)),
         }} />
-        <ConstraintText text={props.copy.line} start={tm.textStart} ivory={pal.ivory} gold={pal.gold} top={1610} />
+        <ConstraintText text={props.copy.line} start={tm.textStart} ivory={pal.ivory} gold={pal.gold} top={1480} />
       </div>
+
+      {props.copy.captions.map((c, i, all) => (
+        // never overlap the next line, even if the timings in props do
+        <Subtitle key={i} text={c.text} at={c.at} end={Math.min(c.end, all[i + 1] ? all[i + 1].at : c.end)} color={pal.ivory} top={1690} />
+      ))}
+
 
       {/* five focusing steps: a quiet progress row, no words */}
       <svg width={W} height={H} style={{position: 'absolute', opacity: smooth(seg(t, tm.steps[0] - 0.4, tm.steps[0] + 0.4)) * (1 - smooth(seg(t, props.brand.endStart - 0.2, props.brand.endStart + 0.4)))}}>

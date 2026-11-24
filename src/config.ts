@@ -53,8 +53,8 @@ export const schema = z.object({
     title: z.string(),
     line: z.string(),
     voice: z.enum(['en', 'he']), // narration language (files in public/vo-en, public/vo-he)
-    /** On-screen captions, synced to narration. `gold` is the word picked out in gold. */
-    captions: z.array(z.object({at: z.number(), end: z.number(), text: z.string(), gold: z.string()})),
+    /** Transcript of the narration, shown as subtitles; edit text or timing freely. */
+    captions: z.array(z.object({at: z.number(), end: z.number(), text: z.string()})),
   }),
   brand: z.object({
     name: z.string(), // placeholder wordmark until the real logo SVG is supplied
@@ -105,16 +105,22 @@ export const defaultProps: Props = {
   copy: {title: '', line: 'ONE CONSTRAINT.',
     voice: 'en',
     captions: [
-      {at: 0.2, end: 5.5, text: 'ONE HIDDEN THROTTLE', gold: 'THROTTLE'},
-      {at: 5.6, end: 8.6, text: 'EVERYTHING ELSE: ZERO GAIN', gold: 'ZERO'},
-      {at: 8.7, end: 12.0, text: 'WHICH ONE?', gold: 'ONE'},
-      {at: 15.6, end: 18.9, text: '01  FIND IT', gold: 'FIND'},
-      {at: 19.0, end: 21.3, text: '02  NEVER LET IT IDLE', gold: 'IDLE'},
-      {at: 21.4, end: 24.4, text: '03  SLOW THE REST', gold: 'SLOW'},
-      {at: 24.5, end: 27.5, text: '04  THEN ELEVATE', gold: 'ELEVATE'},
-      {at: 27.55, end: 28.9, text: '05  REPEAT', gold: 'REPEAT'},
-      {at: 29.0, end: 30.2, text: 'IT JUST MOVED', gold: 'MOVED'},
-    ],  },
+      {at: 0.0, end: 2.76, text: 'Every business has one hidden throttle.'},
+      {at: 2.61, end: 5.71, text: "And it's probably not the one you're fixing."},
+      {at: 5.65, end: 8.88, text: 'Speed up anything else, and you gain nothing.'},
+      {at: 8.7, end: 12.24, text: 'Everything moves at the speed of one point.'},
+      {at: 12.09, end: 12.72, text: 'Which?'},
+      {at: 12.45, end: 14.08, text: "That's the constraint."},
+      {at: 13.93, end: 15.84, text: 'The Theory of Constraints.'},
+      {at: 15.6, end: 18.99, text: 'One: find it. Not where the noise is.'},
+      {at: 19.0, end: 21.45, text: 'Two: never let it idle.'},
+      {at: 21.4, end: 24.58, text: 'Three: slow everything else to match it.'},
+      {at: 24.5, end: 27.73, text: 'Four: only now, add capacity.'},
+      {at: 27.55, end: 28.83, text: 'Then it moves.'},
+      {at: 28.68, end: 30.29, text: 'Did you see where?'},
+      {at: 30.5, end: 32.58, text: 'Every business has one.'},
+      {at: 32.43, end: 33.5, text: 'Find yours.'},
+    ], },
   brand: {
     name: 'GOLDRATT',
     descriptor: 'CONSULTING',
